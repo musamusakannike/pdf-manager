@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Manager - The Ultimate PDF Tool</title>
+    <meta
+      name="description"
+      content="A powerful, secure, and offline PDF management tool. Merge, split, convert, and secure your documents with ease."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <!-- FontAwesome for Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="background-glow"></div>
+
+    <nav class="navbar">
+      <div class="logo">
+        <i class="fa-solid fa-layer-group"></i> PDF Manager
+      </div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#download">Download</a>
+        <a
+          href="https://github.com/musamusakannike/pdf-manager"
+          target="_blank"
+          class="github-link"
+          ><i class="fa-brands fa-github"></i> GitHub</a
+        >
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-content">
+        <div class="badge">v1.0.0 Now Available</div>
+        <h1>
+          Master Your Documents with
+          <span class="gradient-text">PDF Manager</span>
+        </h1>
+        <p class="hero-subtitle">
+          The all-in-one desktop solution for managing PDF files. Secure, fast,
+          and completely offline. Merge, split, convert, and watermak with a
+          modern interface.
+        </p>
+        <div class="cta-group">
+          <a href="#download" class="btn btn-primary"
+            ><i class="fa-brands fa-linux"></i> Download for Linux</a
+          >
+          <a href="#features" class="btn btn-secondary">Explore Features</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="glass-card float-animation">
+          <div class="card-header">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <div class="card-body">
+            <div class="skeleton-line title"></div>
+            <div class="skeleton-grid">
+              <div class="skeleton-box"></div>
+              <div class="skeleton-box"></div>
+              <div class="skeleton-box"></div>
+              <div class="skeleton-box"></div>
+            </div>
+            <div class="upload-area">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Drag & Drop PDF files here</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section id="features" class="features">
+      <div class="section-header">
+        <h2>Everything you need</h2>
+        <p>Powerful tools wrapped in a beautiful interface.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="icon-wrapper color-1">
+            <i class="fa-solid fa-object-ungroup"></i>
+          </div>
+          <h3>Split & Merge</h3>
+          <p>
+            Combine multiple PDFs into one or extract specific pages to create
+            new documents in seconds.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="icon-wrapper color-2">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3>Secure & Protect</h3>
+          <p>
+            Encrypt important documents with passwords or remove restrictions
+            from files you own.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="icon-wrapper color-3">
+            <i class="fa-solid fa-arrow-right-arrow-left"></i>
+          </div>
+          <h3>Convert Formats</h3>
+          <p>
+            Seamlessly convert PDFs to Word, Excel, PowerPoint and vice versa
+            without losing formatting.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="icon-wrapper color-4">
+            <i class="fa-solid fa-stamp"></i>
+          </div>
+          <h3>Watermark</h3>
+          <p>
+            Add text or image watermarks to your pages to protect your
+            intellectual property.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="icon-wrapper color-5">
+            <i class="fa-solid fa-rotate-right"></i>
+          </div>
+          <h3>Rotate & Organize</h3>
+          <p>
+            Fix orientation issues and reorder pages to get your document
+            exactly how you want it.
+          </p>
+        </div>
+        <div class="feature-card">
+          <div class="icon-wrapper color-6">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <h3>Offline & Private</h3>
+          <p>
+            All processing happens on your device. No cloud uploads, ensuring
+            maximum privacy.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="download" class="download-section">
+      <div class="download-container glass-panel">
+        <h2>Get PDF Manager</h2>
+        <p>Choose your platform and start managing PDFs like a pro.</p>
+
+        <div class="os-grid">
+          <!-- Linux -->
+          <div class="os-card featured">
+            <div class="os-icon">
+              <i class="fa-brands fa-linux"></i>
+            </div>
+            <h3>Linux</h3>
+            <p class="version">Free • v1.0.0</p>
+            <a
+              href="https://pub-080732c6fb61453c92062218797bf9df.r2.dev/pdf-manager"
+              class="btn btn-primary full-width"
+            >
+              <i class="fa-solid fa-download"></i> Download AppImage
+            </a>
+          </div>
+
+          <!-- Windows -->
+          <div class="os-card">
+            <div class="os-icon">
+              <i class="fa-brands fa-windows"></i>
+            </div>
+            <h3>Windows</h3>
+            <p class="version">Coming Soon</p>
+            <button class="btn btn-secondary full-width" disabled>
+              Coming Soon
+            </button>
+          </div>
+
+          <!-- macOS -->
+          <div class="os-card">
+            <div class="os-icon">
+              <i class="fa-brands fa-apple"></i>
+            </div>
+            <h3>macOS</h3>
+            <p class="version">Coming Soon</p>
+            <button class="btn btn-secondary full-width" disabled>
+              Coming Soon
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="footer-content">
+        <p>&copy; 2025 PDF Manager. Built for efficiency.</p>
+        <div class="socials">
+          <a href="https://github.com/musamusakannike>
+            <i class="fa-brands fa-github"></i>
+          </a>
+          <a href="https://mailto:musamusakannike@gmail.com">
+            <i class="fa-solid fa-envelope"></i>
+          </a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
