@@ -735,6 +735,73 @@ class ToolsWidget(QWidget):
         self.layout.addWidget(self.img_card)
         self.layout.addSpacing(16)
         
+        # Office Conversion Section
+        self.office_card = QFrame()
+        self.office_card.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                            stop:0 #1A1A1D, stop:1 #161618);
+                border: 1px solid #2A2A2F;
+                border-radius: 12px;
+                padding: 20px;
+            }
+        """)
+        office_layout = QVBoxLayout(self.office_card)
+        
+        office_title = QLabel("📄 Office Conversion")
+        office_title.setStyleSheet("color: white; font-size: 16px; font-weight: bold;")
+        office_layout.addWidget(office_title)
+        
+        office_desc = QLabel("Convert between PDF and Word, Excel, PowerPoint")
+        office_desc.setStyleSheet("color: #9CA3AF; font-size: 12px; margin-bottom: 12px;")
+        office_layout.addWidget(office_desc)
+        
+        # Grid of buttons
+        grid_layout = QHBoxLayout() # Use HBox for columns or Grid
+        # Let's use a Grid for 2 columns
+        from PySide6.QtWidgets import QGridLayout
+        grid = QGridLayout()
+        grid.setSpacing(12)
+        
+        # Helper to create styled buttons for this grid
+        def create_grid_btn(text, color):
+            btn = QPushButton(text)
+            btn.setFixedHeight(44)
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                                stop:0 {color}, stop:1 #1F2937);
+                    color: white;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    border: 1px solid {color};
+                }}
+                QPushButton:hover {{
+                    background: {color};
+                }}
+            """)
+            return btn
+            
+        self.btn_pdf_word = create_grid_btn("PDF → Word", "#3B82F6")
+        self.btn_word_pdf = create_grid_btn("Word → PDF", "#3B82F6")
+        
+        self.btn_pdf_excel = create_grid_btn("PDF → Excel", "#10B981")
+        self.btn_excel_pdf = create_grid_btn("Excel → PDF", "#10B981")
+        
+        self.btn_pdf_ppt = create_grid_btn("PDF → PPT", "#F59E0B")
+        self.btn_ppt_pdf = create_grid_btn("PPT → PDF", "#F59E0B")
+        
+        grid.addWidget(self.btn_pdf_word, 0, 0)
+        grid.addWidget(self.btn_word_pdf, 0, 1)
+        grid.addWidget(self.btn_pdf_excel, 1, 0)
+        grid.addWidget(self.btn_excel_pdf, 1, 1)
+        grid.addWidget(self.btn_pdf_ppt, 2, 0)
+        grid.addWidget(self.btn_ppt_pdf, 2, 1)
+        
+        office_layout.addLayout(grid)
+        self.layout.addWidget(self.office_card)
+        self.layout.addSpacing(16)
+        
         # Page Organization Section
         self.rem_card = QFrame()
         self.rem_card.setStyleSheet("""
@@ -800,6 +867,14 @@ class ToolsWidget(QWidget):
         self.btn_compress.clicked.connect(self.run_compression)
         self.btn_convert.clicked.connect(self.run_conversion)
         self.btn_remove.clicked.connect(self.run_remove_pages)
+        
+        # Conversion Connections
+        self.btn_pdf_word.clicked.connect(self.run_pdf_to_word)
+        self.btn_word_pdf.clicked.connect(self.run_word_to_pdf)
+        self.btn_pdf_excel.clicked.connect(self.run_pdf_to_excel)
+        self.btn_excel_pdf.clicked.connect(self.run_excel_to_pdf)
+        self.btn_pdf_ppt.clicked.connect(self.run_pdf_to_ppt)
+        self.btn_ppt_pdf.clicked.connect(self.run_ppt_to_pdf)
     
     def create_tool_card(self, title, description, color, button_text):
         """Helper to create consistent tool cards."""
@@ -922,6 +997,103 @@ class ToolsWidget(QWidget):
                                "Invalid page format!\n\n"
                                "Please use numbers and dashes.\n"
                                "Examples: 1, 3-5, 7")
+
+    def show_progress(self, message):
+        """Helper to show a simple progress dialog or blocking wait."""
+        # For simplicity, we just change cursor, but a dialog is better.
+        # Let's use QProgressDialog to show we are busy
+        from PySide6.QtWidgets import QProgressDialog
+        progress = QProgressDialog(message, None, 0, 0, self)
+        progress.setWindowTitle("Processing")
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setCancelButton(None)
+        progress.show()
+        QApplication.processEvents()
+        return progress
+
+    def run_pdf_to_word(self):
+        path = self.select_file()
+        if path:
+            out, _ = QFileDialog.getSaveFileName(self, "Save Word Document", "", "Word Documents (*.docx)")
+            if out:
+                if not out.endswith('.docx'): out += '.docx'
+                progress = self.show_progress("Converting PDF to Word...")
+                success = PDFEngine.pdf_to_word(path, out)
+                progress.close()
+                if success:
+                    QMessageBox.information(self, "✅ Success", f"Converted to Word:\n{out}")
+                else:
+                    QMessageBox.critical(self, "❌ Error", "Conversion failed.")
+
+    def run_word_to_pdf(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Select Word Document", "", "Word Documents (*.docx *.doc)")
+        if path:
+            out, _ = QFileDialog.getSaveFileName(self, "Save PDF", "", "PDF Files (*.pdf)")
+            if out:
+                if not out.endswith('.pdf'): out += '.pdf'
+                progress = self.show_progress("Converting Word to PDF...")
+                success = PDFEngine.word_to_pdf(path, out)
+                progress.close()
+                if success:
+                    QMessageBox.information(self, "✅ Success", f"Converted to PDF:\n{out}")
+                else:
+                    QMessageBox.critical(self, "❌ Error", "Conversion failed.")
+
+    def run_pdf_to_excel(self):
+        path = self.select_file()
+        if path:
+            out, _ = QFileDialog.getSaveFileName(self, "Save Excel Spreadsheet", "", "Excel Files (*.xlsx)")
+            if out:
+                if not out.endswith('.xlsx'): out += '.xlsx'
+                progress = self.show_progress("Converting PDF to Excel...")
+                success = PDFEngine.pdf_to_excel(path, out)
+                progress.close()
+                if success:
+                    QMessageBox.information(self, "✅ Success", f"Converted to Excel:\n{out}")
+                else:
+                    QMessageBox.critical(self, "❌ Error", "Conversion failed. No tables found or error occurred.")
+
+    def run_excel_to_pdf(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Select Excel File", "", "Excel Files (*.xlsx *.xls)")
+        if path:
+            out, _ = QFileDialog.getSaveFileName(self, "Save PDF", "", "PDF Files (*.pdf)")
+            if out:
+                if not out.endswith('.pdf'): out += '.pdf'
+                progress = self.show_progress("Converting Excel to PDF...")
+                success = PDFEngine.excel_to_pdf(path, out)
+                progress.close()
+                if success:
+                    QMessageBox.information(self, "✅ Success", f"Converted to PDF:\n{out}")
+                else:
+                    QMessageBox.critical(self, "❌ Error", "Conversion failed.")
+
+    def run_pdf_to_ppt(self):
+        path = self.select_file()
+        if path:
+            out, _ = QFileDialog.getSaveFileName(self, "Save PowerPoint", "", "PowerPoint Files (*.pptx)")
+            if out:
+                if not out.endswith('.pptx'): out += '.pptx'
+                progress = self.show_progress("Converting PDF to PowerPoint...")
+                success = PDFEngine.pdf_to_powerpoint(path, out)
+                progress.close()
+                if success:
+                    QMessageBox.information(self, "✅ Success", f"Converted to PowerPoint:\n{out}")
+                else:
+                    QMessageBox.critical(self, "❌ Error", "Conversion failed.")
+
+    def run_ppt_to_pdf(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Select PowerPoint", "", "PowerPoint Files (*.pptx *.ppt)")
+        if path:
+            out, _ = QFileDialog.getSaveFileName(self, "Save PDF", "", "PDF Files (*.pdf)")
+            if out:
+                if not out.endswith('.pdf'): out += '.pdf'
+                progress = self.show_progress("Converting PowerPoint to PDF...")
+                success = PDFEngine.powerpoint_to_pdf(path, out)
+                progress.close()
+                if success:
+                    QMessageBox.information(self, "✅ Success", f"Converted to PDF:\n{out}")
+                else:
+                    QMessageBox.critical(self, "❌ Error", "Conversion failed.")
 
 class PDFMasterApp(QMainWindow):
     def __init__(self):

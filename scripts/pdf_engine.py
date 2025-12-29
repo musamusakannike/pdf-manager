@@ -1,6 +1,13 @@
 import fitz  # PyMuPDF
 from pypdf import PdfReader, PdfWriter
 import os
+import subprocess
+from pdf2docx import Converter
+import pandas as pd
+import pdfplumber
+from pptx import Presentation
+from pptx.util import Inches
+import io
 
 class PDFEngine:
     """Core engine for PDF manipulations using PyMuPDF and pypdf."""
@@ -206,3 +213,153 @@ class PDFEngine:
         doc.save(output_path)
         doc.close()
         return True
+
+    @staticmethod
+    def pdf_to_word(path, output_path):
+        """Converts PDF to Word (.docx) using pdf2docx."""
+        try:
+            cv = Converter(path)
+            cv.convert(output_path, start=0, end=None)
+            cv.close()
+            return True
+        except Exception as e:
+            print(f"Error converting PDF to Word: {e}")
+            return False
+
+    @staticmethod
+    def word_to_pdf(path, output_path):
+        """Converts Word (.docx) to PDF using LibreOffice."""
+        try:
+            # LibreOffice headless conversion
+            output_dir = os.path.dirname(output_path)
+            subprocess.run([
+                'libreoffice', '--headless', '--convert-to', 'pdf',
+                '--outdir', output_dir, path
+            ], check=True)
+            
+            # LibreOffice saves with same basename, ensure output_path matches
+            # If output_path name is different from input basename + .pdf, rename it
+            base_name = os.path.splitext(os.path.basename(path))[0]
+            created_pdf = os.path.join(output_dir, f"{base_name}.pdf")
+            
+            if created_pdf != output_path and os.path.exists(created_pdf):
+                if os.path.exists(output_path):
+                    os.remove(output_path)
+                os.rename(created_pdf, output_path)
+                
+            return os.path.exists(output_path)
+        except Exception as e:
+            print(f"Error converting Word to PDF: {e}")
+            return False
+
+    @staticmethod
+    def pdf_to_excel(path, output_path):
+        """Converts PDF tables to Excel (.xlsx) using pdfplumber."""
+        try:
+            with pdfplumber.open(path) as pdf:
+                all_tables = []
+                for page in pdf.pages:
+                    tables = page.extract_tables()
+                    for table in tables:
+                        df = pd.DataFrame(table)
+                        # Clean up: remove empty rows/cols if needed
+                        all_tables.append(df)
+                
+                if not all_tables:
+                    # No tables found
+                    return False
+                
+                with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                    for i, df in enumerate(all_tables):
+                        df.to_excel(writer, sheet_name=f"Table_{i+1}", index=False, header=False)
+            return True
+        except Exception as e:
+            print(f"Error converting PDF to Excel: {e}")
+            return False
+
+    @staticmethod
+    def excel_to_pdf(path, output_path):
+        """Converts Excel (.xlsx) to PDF using LibreOffice."""
+        try:
+            output_dir = os.path.dirname(output_path)
+            subprocess.run([
+                'libreoffice', '--headless', '--convert-to', 'pdf',
+                '--outdir', output_dir, path
+            ], check=True)
+            
+            base_name = os.path.splitext(os.path.basename(path))[0]
+            created_pdf = os.path.join(output_dir, f"{base_name}.pdf")
+            
+            if created_pdf != output_path and os.path.exists(created_pdf):
+                if os.path.exists(output_path):
+                    os.remove(output_path)
+                os.rename(created_pdf, output_path)
+                
+            return os.path.exists(output_path)
+        except Exception as e:
+            print(f"Error converting Excel to PDF: {e}")
+            return False
+
+    @staticmethod
+    def pdf_to_powerpoint(path, output_path):
+        """Converts PDF pages to PowerPoint slides (as images)."""
+        try:
+            doc = fitz.open(path)
+            prs = Presentation()
+            
+            # Use 16:9 aspect ratio usually, but let's match PDF page size roughly
+            # Default slide width is 10 inches, height is 7.5 inches
+            
+            for i in range(len(doc)):
+                page = doc.load_page(i)
+                
+                # Render page to image
+                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2)) # High res
+                img_data = pix.tobytes("png")
+                image_stream = io.BytesIO(img_data)
+                
+                # Create blank slide
+                result = prs.slides.add_slide(prs.slide_layouts[6]) # 6 is blank layout
+                
+                # Add image to slide, fitting to slide size
+                # We need to calculate aspect ratios to fit properly
+                # For simplicity, we'll just fill the slide or center it.
+                # Let's try to fit the image centered
+                
+                left = top = Inches(0)
+                # width = Inches(10)
+                # height = Inches(7.5)
+                # result.shapes.add_picture(image_stream, left, top, width=width)
+                
+                # Better approach: Just add picture at 0,0 and let it size naturally or fit
+                result.shapes.add_picture(image_stream, left, top, height=Inches(7.5))
+                
+            prs.save(output_path)
+            doc.close()
+            return True
+        except Exception as e:
+            print(f"Error converting PDF to PowerPoint: {e}")
+            return False
+
+    @staticmethod
+    def powerpoint_to_pdf(path, output_path):
+        """Converts PowerPoint (.pptx) to PDF using LibreOffice."""
+        try:
+            output_dir = os.path.dirname(output_path)
+            subprocess.run([
+                'libreoffice', '--headless', '--convert-to', 'pdf',
+                '--outdir', output_dir, path
+            ], check=True)
+            
+            base_name = os.path.splitext(os.path.basename(path))[0]
+            created_pdf = os.path.join(output_dir, f"{base_name}.pdf")
+            
+            if created_pdf != output_path and os.path.exists(created_pdf):
+                if os.path.exists(output_path):
+                    os.remove(output_path)
+                os.rename(created_pdf, output_path)
+                
+            return os.path.exists(output_path)
+        except Exception as e:
+            print(f"Error converting PowerPoint to PDF: {e}")
+            return False
