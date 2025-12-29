@@ -13,8 +13,24 @@ from PySide6.QtCore import Qt, QSize, QBuffer, QIODevice, QPropertyAnimation, QE
 from PySide6.QtGui import QIcon, QAction, QPixmap, QImage, QMouseEvent, QDragEnterEvent, QDropEvent, QKeySequence, QShortcut, QFont, QFontDatabase
 from scripts.pdf_engine import PDFEngine
 
+# Determine if running in a frozen state (PyInstaller)
+IS_FROZEN = getattr(sys, 'frozen', False)
+
+def get_base_dir():
+    """Get the base directory for resources."""
+    if IS_FROZEN:
+        return sys._MEIPASS
+    return os.path.dirname(os.path.abspath(__file__))
+
+def get_config_dir():
+    """Get the directory for configuration files (writable)."""
+    if IS_FROZEN:
+        # Use the directory where the executable is located
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
 # Configuration file path
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
+CONFIG_FILE = os.path.join(get_config_dir(), "config.json")
 
 # Enhanced modern stylesheet with gradients and animations
 STYLESHEET = """
@@ -1869,6 +1885,11 @@ class PDFMasterApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("PDF Master - Professional PDF Tools")
+        
+        # Set application icon
+        icon_path = os.path.join(get_base_dir(), "icon.png")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         
         # Enable window resizing and set minimum size
         self.setMinimumSize(900, 600)

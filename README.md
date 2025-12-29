@@ -62,22 +62,40 @@ A professional PDF management tool built with Python and PySide6, featuring a mo
   - Title, Author, Subject
   - Creator, Producer
   - Creation and modification dates
-  - Page count
-  - Encryption status
+  - **Security**: Watermark, Encrypt, and Decrypt PDFs.
 
 #### 📑 Page Organization
 - Extract specific pages (e.g., 1, 3-5, 7)
 - Remove unwanted pages
 - Create custom page selections
 
-## User Interface
-
+## User Interface (UI)
 - **Modern Dark Theme**: Sleek, professional dark-themed interface with gradient accents
-- **Drag \u0026 Drop Support**: Easily add files by dragging them into the application
+- **Drag & Drop Support**: Easily add files by dragging them into the application
 - **Responsive Design**: Scrollable interfaces for comfortable viewing
 - **Visual Feedback**: Smooth animations and hover effects
 - **Status Bar**: Real-time progress updates and notifications
 - **Tooltips**: Helpful hints for all major features
+
+## 📦 Building the Application
+
+You can build the application for your operating system (Windows, macOS, Linux) using the included build script.
+
+**Prerequisites:**
+- Python 3.8+ installed
+- Dependencies installed (`pip install -r requirements.txt`)
+- PyInstaller installed (`pip install pyinstaller`)
+
+**Build Command:**
+Run the following command from the project root:
+
+```bash
+python scripts/build_executable.py
+```
+
+- **Windows**: Generates a `.exe` file in the `dist` folder.
+- **macOS**: Generates a `.app` bundle or executable in `dist`.
+- **Linux**: Generates a binary executable in `dist`.
 
 ## Keyboard Shortcuts
 
