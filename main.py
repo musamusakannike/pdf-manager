@@ -3,10 +3,11 @@ import os
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QStackedWidget, QPushButton, QFileDialog, QMessageBox, QListWidget,
-    QListWidgetItem, QLabel, QFrame, QSplitter, QScrollArea, QLineEdit
+    QListWidgetItem, QLabel, QFrame, QSplitter, QScrollArea, QLineEdit,
+    QInputDialog
 )
 from PySide6.QtCore import Qt, QSize, QBuffer, QIODevice
-from PySide6.QtGui import QIcon, QAction, QPixmap, QImage
+from PySide6.QtGui import QIcon, QAction, QPixmap, QImage, QMouseEvent
 from scripts.pdf_engine import PDFEngine
 
 # Mocking a simple theme based on design inspiration
@@ -107,6 +108,15 @@ class PDFViewer(QWidget):
         self.btn_zoom_in = QPushButton("+")
         self.btn_zoom_out = QPushButton("-")
         
+        # Annotation Toggle
+        self.btn_annotate = QPushButton("Annotate")
+        self.btn_annotate.setCheckable(True)
+        self.btn_annotate.setStyleSheet("""
+            QPushButton { background-color: #27272A; color: white; border-radius: 4px; padding: 0 10px; }
+            QPushButton:checked { background-color: #B91C1C; }
+        """)
+        self.btn_annotate.setFixedSize(80, 32)
+        
         for btn in [self.btn_prev, self.btn_next, self.btn_zoom_in, self.btn_zoom_out]:
             btn.setFixedSize(32, 32)
             btn.setStyleSheet("background-color: #27272A; color: white; border-radius: 4px;")
@@ -115,6 +125,7 @@ class PDFViewer(QWidget):
         toolbar_layout.addWidget(self.page_label)
         toolbar_layout.addWidget(self.btn_next)
         toolbar_layout.addStretch()
+        toolbar_layout.addWidget(self.btn_annotate)
         toolbar_layout.addWidget(self.btn_zoom_out)
         toolbar_layout.addWidget(self.btn_zoom_in)
         
@@ -142,6 +153,9 @@ class PDFViewer(QWidget):
         self.btn_next.clicked.connect(self.next_page)
         self.btn_zoom_in.clicked.connect(self.zoom_in)
         self.btn_zoom_out.clicked.connect(self.zoom_out)
+        
+        # Enable mouse tracking for annotation
+        self.content_label.mousePressEvent = self.handle_click
 
     def load_pdf(self, path):
         self.current_path = path
@@ -177,6 +191,38 @@ class PDFViewer(QWidget):
         if self.zoom_level > 0.5:
             self.zoom_level -= 0.5
             self.display_page()
+            
+    def handle_click(self, event: QMouseEvent):
+        if not self.current_path or not self.btn_annotate.isChecked():
+            return
+
+        x = event.pos().x()
+        y = event.pos().y()
+        
+        # Adjust coordinates based on alignment (Center alignment might shift the pixmap)
+        # However, since we are clicking on content_label which holds the pixmap, 
+        # local coordinates should be relative to the label/pixmap.
+        # But if the label is larger than the pixmap (due to center alignment), we might need to adjust.
+        # For simplicity in this iteration, assuming label fits content or click is valid.
+        
+        # Map to PDF coordinates (approximate, since we don't know the exact PDF point metrics vs pixmap pixels perfectly without more complex logic being exposed from PDFEngine)
+        # PDFEngine.render_page uses a matrix with zoom.
+        # So: pdf_x = widget_x / zoom
+        
+        pdf_x = x / self.zoom_level
+        pdf_y = y / self.zoom_level
+        
+        text, ok = QInputDialog.getText(self, "Add Annotation", "Enter text to add:")
+        if ok and text:
+            output_path, _ = QFileDialog.getSaveFileName(self, "Save Annotated PDF", "", "PDF Files (*.pdf)")
+            if output_path:
+                # PDFEngine.add_text_annotation logic needs to handle coordinate system.
+                # Usually PyMuPDF uses points (1/72 inch). 
+                PDFEngine.add_text_annotation(self.current_path, self.current_page, text, pdf_x, pdf_y, output_path)
+                QMessageBox.information(self, "Success", f"Annotation added. Saved to {output_path}")
+                # Optionally load the new file
+                self.load_pdf(output_path)
+                self.btn_annotate.setChecked(False)
 
 class MergeWidget(QWidget):
     def __init__(self, parent=None):
@@ -316,12 +362,31 @@ class ToolsWidget(QWidget):
         self.btn_convert.setStyleSheet("background-color: #10B981; color: white; padding: 10px; border-radius: 4px;")
         img_layout.addWidget(self.btn_convert)
         self.layout.addWidget(self.img_card)
+
+        self.layout.addSpacing(20)
+
+        # Page Removal Section
+        self.rem_card = QFrame()
+        self.rem_card.setStyleSheet("background-color: #161618; border: 1px solid #27272A; border-radius: 8px; padding: 15px;")
+        rem_layout = QVBoxLayout(self.rem_card)
+        rem_layout.addWidget(QLabel("<b>Page Organization</b><br><small>Keep specific pages, remove others.</small>"))
+        
+        self.pages_input = QLineEdit()
+        self.pages_input.setPlaceholderText("Enter pages to keep (e.g. 1, 3-5)")
+        self.pages_input.setStyleSheet("padding: 8px; border-radius: 4px; background-color: #27272A; color: white; border: 1px solid #3F3F46;")
+        rem_layout.addWidget(self.pages_input)
+
+        self.btn_remove = QPushButton("Remove Other Pages")
+        self.btn_remove.setStyleSheet("background-color: #F59E0B; color: white; padding: 10px; border-radius: 4px;")
+        rem_layout.addWidget(self.btn_remove)
+        self.layout.addWidget(self.rem_card)
         
         self.layout.addStretch()
         
         self.current_path = None
         self.btn_compress.clicked.connect(self.run_compression)
         self.btn_convert.clicked.connect(self.run_conversion)
+        self.btn_remove.clicked.connect(self.run_remove_pages)
 
     def select_file(self):
         path, _ = QFileDialog.getOpenFileName(self, "Select PDF", "", "PDF Files (*.pdf)")
@@ -342,6 +407,38 @@ class ToolsWidget(QWidget):
             if out_dir:
                 PDFEngine.pdf_to_images(path, out_dir)
                 QMessageBox.information(self, "Success", "PDF converted to images!")
+
+    def run_remove_pages(self):
+        path = self.select_file()
+        if not path:
+            return
+
+        pages_str = self.pages_input.text().strip()
+        if not pages_str:
+            QMessageBox.warning(self, "Warning", "Please enter pages to keep.")
+            return
+
+        # Parsing logic: "1, 3-5" -> [0, 2, 3, 4]
+        try:
+            pages_to_keep = set()
+            parts = pages_str.split(',')
+            for part in parts:
+                part = part.strip()
+                if '-' in part:
+                    start, end = map(int, part.split('-'))
+                    pages_to_keep.update(range(start-1, end)) # 0-indexed
+                else:
+                    pages_to_keep.add(int(part) - 1)
+            
+            sorted_pages = sorted(list(pages_to_keep))
+            
+            out, _ = QFileDialog.getSaveFileName(self, "Save Details", "", "PDF Files (*.pdf)")
+            if out:
+                PDFEngine.remove_pages(path, sorted_pages, out)
+                QMessageBox.information(self, "Success", f"Created PDF with {len(sorted_pages)} pages.")
+
+        except ValueError:
+            QMessageBox.critical(self, "Error", "Invalid page format. Use numbers and dashes (e.g., 1, 3-5).")
 
 class PDFMasterApp(QMainWindow):
     def __init__(self):
