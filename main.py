@@ -5,7 +5,9 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QStackedWidget, QPushButton, QFileDialog, QMessageBox, QListWidget,
     QListWidgetItem, QLabel, QFrame, QSplitter, QScrollArea, QLineEdit,
-    QInputDialog, QProgressBar, QStatusBar, QGraphicsOpacityEffect
+    QInputDialog, QProgressBar, QStatusBar, QGraphicsOpacityEffect,
+    QComboBox, QRadioButton, QButtonGroup, QDialog, QDialogButtonBox,
+    QCheckBox
 )
 from PySide6.QtCore import Qt, QSize, QBuffer, QIODevice, QPropertyAnimation, QEasingCurve, QTimer, QPoint
 from PySide6.QtGui import QIcon, QAction, QPixmap, QImage, QMouseEvent, QDragEnterEvent, QDropEvent, QKeySequence, QShortcut, QFont, QFontDatabase
@@ -676,6 +678,106 @@ class SplitWidget(QWidget):
                 QMessageBox.information(self, "✅ Success", 
                                       f"PDF successfully split into {page_count} pages!\n\nSaved to:\n{output_dir}")
 
+class MetadataDialog(QDialog):
+    """Dialog to display PDF metadata information."""
+    
+    def __init__(self, pdf_info, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("PDF Properties")
+        self.setMinimumWidth(500)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #0A0A0B;
+            }
+            QLabel {
+                color: #E5E7EB;
+                font-size: 13px;
+                padding: 6px 0;
+            }
+            QLabel#PropertyLabel {
+                color: #9CA3AF;
+                font-weight: bold;
+            }
+            QLabel#ValueLabel {
+                color: #FFFFFF;
+            }
+        """)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
+        
+        # Title
+        title = QLabel("ℹ️ PDF Document Information")
+        title.setStyleSheet("color: white; font-size: 18px; font-weight: bold; padding-bottom: 8px;")
+        layout.addWidget(title)
+        
+        # Info container
+        info_frame = QFrame()
+        info_frame.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                            stop:0 #1A1A1D, stop:1 #161618);
+                border: 1px solid #2A2A2F;
+                border-radius: 8px;
+                padding: 16px;
+            }
+        """)
+        info_layout = QVBoxLayout(info_frame)
+        info_layout.setSpacing(12)
+        
+        # Add metadata fields
+        fields = [
+            ("📄 Pages", str(pdf_info.get('pages', 'N/A'))),
+            ("📝 Title", pdf_info.get('title', 'N/A')),
+            ("✍️ Author", pdf_info.get('author', 'N/A')),
+            ("📋 Subject", pdf_info.get('subject', 'N/A')),
+            ("🛠️ Creator", pdf_info.get('creator', 'N/A')),
+            ("🏭 Producer", pdf_info.get('producer', 'N/A')),
+            ("📅 Created", pdf_info.get('creation_date', 'N/A')),
+            ("🔄 Modified", pdf_info.get('modification_date', 'N/A')),
+            ("🔒 Encrypted", "Yes" if pdf_info.get('encrypted', False) else "No"),
+        ]
+        
+        for label_text, value_text in fields:
+            row = QHBoxLayout()
+            row.setSpacing(12)
+            
+            label = QLabel(label_text)
+            label.setObjectName("PropertyLabel")
+            label.setMinimumWidth(120)
+            row.addWidget(label)
+            
+            value = QLabel(str(value_text))
+            value.setObjectName("ValueLabel")
+            value.setWordWrap(True)
+            row.addWidget(value, 1)
+            
+            info_layout.addLayout(row)
+        
+        layout.addWidget(info_frame)
+        
+        # Close button
+        button_box = QDialogButtonBox(QDialogButtonBox.Close)
+        button_box.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #374151, stop:1 #27272A);
+                color: white;
+                padding: 10px 24px;
+                border-radius: 6px;
+                font-weight: bold;
+                border: none;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #4B5563, stop:1 #374151);
+            }
+        """)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
+
 class ToolsWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -733,6 +835,357 @@ class ToolsWidget(QWidget):
         )
         self.btn_convert = self.img_card.findChild(QPushButton)
         self.layout.addWidget(self.img_card)
+        self.layout.addSpacing(16)
+        
+        # Watermark Section
+        self.watermark_card = QFrame()
+        self.watermark_card.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                            stop:0 #1A1A1D, stop:1 #161618);
+                border: 1px solid #2A2A2F;
+                border-radius: 12px;
+                padding: 20px;
+            }
+        """)
+        watermark_layout = QVBoxLayout(self.watermark_card)
+        
+        watermark_title = QLabel("💧 Add Watermark")
+        watermark_title.setStyleSheet("color: white; font-size: 16px; font-weight: bold;")
+        watermark_layout.addWidget(watermark_title)
+        
+        watermark_desc = QLabel("Add custom text watermark to all pages")
+        watermark_desc.setStyleSheet("color: #9CA3AF; font-size: 12px; margin-bottom: 12px;")
+        watermark_layout.addWidget(watermark_desc)
+        
+        self.watermark_input = QLineEdit()
+        self.watermark_input.setPlaceholderText("Enter watermark text (e.g., CONFIDENTIAL)")
+        self.watermark_input.setStyleSheet("""
+            QLineEdit {
+                padding: 12px;
+                border-radius: 6px;
+                background-color: #27272A;
+                color: white;
+                border: 1px solid #3F3F46;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #8B5CF6;
+            }
+        """)
+        watermark_layout.addWidget(self.watermark_input)
+        
+        self.btn_watermark = QPushButton("💧 Apply Watermark")
+        self.btn_watermark.setFixedHeight(44)
+        self.btn_watermark.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #8B5CF6, stop:1 #7C3AED);
+                color: white;
+                padding: 12px;
+                border-radius: 8px;
+                font-weight: bold;
+                border: none;
+                margin-top: 8px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #A78BFA, stop:1 #8B5CF6);
+            }
+        """)
+        watermark_layout.addWidget(self.btn_watermark)
+        self.layout.addWidget(self.watermark_card)
+        self.layout.addSpacing(16)
+        
+        # Security Section (Encryption/Decryption)
+        self.security_card = QFrame()
+        self.security_card.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                            stop:0 #1A1A1D, stop:1 #161618);
+                border: 1px solid #2A2A2F;
+                border-radius: 12px;
+                padding: 20px;
+            }
+        """)
+        security_layout = QVBoxLayout(self.security_card)
+        
+        security_title = QLabel("🔒 PDF Security")
+        security_title.setStyleSheet("color: white; font-size: 16px; font-weight: bold;")
+        security_layout.addWidget(security_title)
+        
+        security_desc = QLabel("Protect or unlock PDFs with password encryption")
+        security_desc.setStyleSheet("color: #9CA3AF; font-size: 12px; margin-bottom: 12px;")
+        security_layout.addWidget(security_desc)
+        
+        # Encryption subsection
+        encrypt_label = QLabel("🔒 Encrypt PDF")
+        encrypt_label.setStyleSheet("color: #10B981; font-size: 13px; font-weight: bold; margin-top: 8px;")
+        security_layout.addWidget(encrypt_label)
+        
+        self.encrypt_password = QLineEdit()
+        self.encrypt_password.setPlaceholderText("Enter password for encryption")
+        self.encrypt_password.setEchoMode(QLineEdit.Password)
+        self.encrypt_password.setStyleSheet("""
+            QLineEdit {
+                padding: 10px;
+                border-radius: 6px;
+                background-color: #27272A;
+                color: white;
+                border: 1px solid #3F3F46;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #10B981;
+            }
+        """)
+        security_layout.addWidget(self.encrypt_password)
+        
+        self.btn_encrypt = QPushButton("🔒 Encrypt PDF")
+        self.btn_encrypt.setFixedHeight(40)
+        self.btn_encrypt.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #10B981, stop:1 #059669);
+                color: white;
+                padding: 10px;
+                border-radius: 6px;
+                font-weight: bold;
+                border: none;
+                margin-top: 6px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #34D399, stop:1 #10B981);
+            }
+        """)
+        security_layout.addWidget(self.btn_encrypt)
+        
+        # Decryption subsection
+        decrypt_label = QLabel("🔓 Decrypt PDF")
+        decrypt_label.setStyleSheet("color: #F59E0B; font-size: 13px; font-weight: bold; margin-top: 16px;")
+        security_layout.addWidget(decrypt_label)
+        
+        self.decrypt_password = QLineEdit()
+        self.decrypt_password.setPlaceholderText("Enter password to unlock")
+        self.decrypt_password.setEchoMode(QLineEdit.Password)
+        self.decrypt_password.setStyleSheet("""
+            QLineEdit {
+                padding: 10px;
+                border-radius: 6px;
+                background-color: #27272A;
+                color: white;
+                border: 1px solid #3F3F46;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #F59E0B;
+            }
+        """)
+        security_layout.addWidget(self.decrypt_password)
+        
+        self.btn_decrypt = QPushButton("🔓 Decrypt PDF")
+        self.btn_decrypt.setFixedHeight(40)
+        self.btn_decrypt.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #F59E0B, stop:1 #D97706);
+                color: white;
+                padding: 10px;
+                border-radius: 6px;
+                font-weight: bold;
+                border: none;
+                margin-top: 6px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #FBBF24, stop:1 #F59E0B);
+            }
+        """)
+        security_layout.addWidget(self.btn_decrypt)
+        self.layout.addWidget(self.security_card)
+        self.layout.addSpacing(16)
+        
+        # Page Rotation Section
+        self.rotation_card = QFrame()
+        self.rotation_card.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                            stop:0 #1A1A1D, stop:1 #161618);
+                border: 1px solid #2A2A2F;
+                border-radius: 12px;
+                padding: 20px;
+            }
+        """)
+        rotation_layout = QVBoxLayout(self.rotation_card)
+        
+        rotation_title = QLabel("🔄 Rotate Pages")
+        rotation_title.setStyleSheet("color: white; font-size: 16px; font-weight: bold;")
+        rotation_layout.addWidget(rotation_title)
+        
+        rotation_desc = QLabel("Rotate specific pages or entire document")
+        rotation_desc.setStyleSheet("color: #9CA3AF; font-size: 12px; margin-bottom: 12px;")
+        rotation_layout.addWidget(rotation_desc)
+        
+        # Rotation angle selector
+        angle_label = QLabel("Rotation Angle:")
+        angle_label.setStyleSheet("color: #E5E7EB; font-size: 13px; margin-top: 4px;")
+        rotation_layout.addWidget(angle_label)
+        
+        self.rotation_angle = QComboBox()
+        self.rotation_angle.addItems(["90° Clockwise", "180°", "270° Clockwise"])
+        self.rotation_angle.setStyleSheet("""
+            QComboBox {
+                padding: 10px;
+                border-radius: 6px;
+                background-color: #27272A;
+                color: white;
+                border: 1px solid #3F3F46;
+                font-size: 13px;
+            }
+            QComboBox:hover {
+                border: 1px solid #EC4899;
+            }
+            QComboBox::drop-down {
+                border: none;
+                padding-right: 10px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #27272A;
+                color: white;
+                selection-background-color: #EC4899;
+                border: 1px solid #3F3F46;
+            }
+        """)
+        rotation_layout.addWidget(self.rotation_angle)
+        
+        # All pages checkbox
+        self.rotate_all_pages = QCheckBox("Rotate all pages")
+        self.rotate_all_pages.setChecked(True)
+        self.rotate_all_pages.setStyleSheet("""
+            QCheckBox {
+                color: #E5E7EB;
+                font-size: 13px;
+                margin-top: 8px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+                border-radius: 4px;
+                border: 2px solid #3F3F46;
+                background-color: #27272A;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #EC4899;
+                border-color: #EC4899;
+            }
+        """)
+        rotation_layout.addWidget(self.rotate_all_pages)
+        
+        self.btn_rotate = QPushButton("🔄 Rotate Pages")
+        self.btn_rotate.setFixedHeight(44)
+        self.btn_rotate.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #EC4899, stop:1 #DB2777);
+                color: white;
+                padding: 12px;
+                border-radius: 8px;
+                font-weight: bold;
+                border: none;
+                margin-top: 8px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #F472B6, stop:1 #EC4899);
+            }
+        """)
+        rotation_layout.addWidget(self.btn_rotate)
+        self.layout.addWidget(self.rotation_card)
+        self.layout.addSpacing(16)
+        
+        # Text Extraction Section
+        self.extract_card = QFrame()
+        self.extract_card.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                            stop:0 #1A1A1D, stop:1 #161618);
+                border: 1px solid #2A2A2F;
+                border-radius: 12px;
+                padding: 20px;
+            }
+        """)
+        extract_layout = QVBoxLayout(self.extract_card)
+        
+        extract_title = QLabel("📝 Extract Text")
+        extract_title.setStyleSheet("color: white; font-size: 16px; font-weight: bold;")
+        extract_layout.addWidget(extract_title)
+        
+        extract_desc = QLabel("Extract text content and save to .txt file")
+        extract_desc.setStyleSheet("color: #9CA3AF; font-size: 12px; margin-bottom: 12px;")
+        extract_layout.addWidget(extract_desc)
+        
+        self.btn_extract = QPushButton("📝 Extract to TXT")
+        self.btn_extract.setFixedHeight(44)
+        self.btn_extract.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #06B6D4, stop:1 #0891B2);
+                color: white;
+                padding: 12px;
+                border-radius: 8px;
+                font-weight: bold;
+                border: none;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #22D3EE, stop:1 #06B6D4);
+            }
+        """)
+        extract_layout.addWidget(self.btn_extract)
+        self.layout.addWidget(self.extract_card)
+        self.layout.addSpacing(16)
+        
+        # Metadata Viewer Section
+        self.metadata_card = QFrame()
+        self.metadata_card.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                            stop:0 #1A1A1D, stop:1 #161618);
+                border: 1px solid #2A2A2F;
+                border-radius: 12px;
+                padding: 20px;
+            }
+        """)
+        metadata_layout = QVBoxLayout(self.metadata_card)
+        
+        metadata_title = QLabel("ℹ️ PDF Information")
+        metadata_title.setStyleSheet("color: white; font-size: 16px; font-weight: bold;")
+        metadata_layout.addWidget(metadata_title)
+        
+        metadata_desc = QLabel("View document properties and metadata")
+        metadata_desc.setStyleSheet("color: #9CA3AF; font-size: 12px; margin-bottom: 12px;")
+        metadata_layout.addWidget(metadata_desc)
+        
+        self.btn_metadata = QPushButton("ℹ️ View PDF Info")
+        self.btn_metadata.setFixedHeight(44)
+        self.btn_metadata.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #6366F1, stop:1 #4F46E5);
+                color: white;
+                padding: 12px;
+                border-radius: 8px;
+                font-weight: bold;
+                border: none;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                                            stop:0 #818CF8, stop:1 #6366F1);
+            }
+        """)
+        metadata_layout.addWidget(self.btn_metadata)
+        self.layout.addWidget(self.metadata_card)
         self.layout.addSpacing(16)
         
         # Office Conversion Section
@@ -875,6 +1328,14 @@ class ToolsWidget(QWidget):
         self.btn_excel_pdf.clicked.connect(self.run_excel_to_pdf)
         self.btn_pdf_ppt.clicked.connect(self.run_pdf_to_ppt)
         self.btn_ppt_pdf.clicked.connect(self.run_ppt_to_pdf)
+        
+        # New Tool Connections
+        self.btn_watermark.clicked.connect(self.run_watermark)
+        self.btn_encrypt.clicked.connect(self.run_encrypt)
+        self.btn_decrypt.clicked.connect(self.run_decrypt)
+        self.btn_rotate.clicked.connect(self.run_rotation)
+        self.btn_extract.clicked.connect(self.run_text_extraction)
+        self.btn_metadata.clicked.connect(self.show_metadata)
     
     def create_tool_card(self, title, description, color, button_text):
         """Helper to create consistent tool cards."""
@@ -1094,6 +1555,167 @@ class ToolsWidget(QWidget):
                     QMessageBox.information(self, "✅ Success", f"Converted to PDF:\n{out}")
                 else:
                     QMessageBox.critical(self, "❌ Error", "Conversion failed.")
+    
+    def run_watermark(self):
+        """Add watermark to PDF."""
+        watermark_text = self.watermark_input.text().strip()
+        if not watermark_text:
+            QMessageBox.warning(self, "⚠️ No Watermark Text", 
+                              "Please enter watermark text before applying.")
+            return
+        
+        path = self.select_file()
+        if path:
+            out, _ = QFileDialog.getSaveFileName(self, "Save Watermarked PDF", "", "PDF Files (*.pdf)")
+            if out:
+                if not out.endswith('.pdf'): out += '.pdf'
+                progress = self.show_progress("Adding watermark...")
+                success = PDFEngine.add_watermark(path, watermark_text, out)
+                progress.close()
+                if success:
+                    QMessageBox.information(self, "✅ Success", 
+                                          f"Watermark applied successfully!\n\nSaved to:\n{out}")
+                else:
+                    QMessageBox.critical(self, "❌ Error", "Failed to add watermark.")
+    
+    def run_encrypt(self):
+        """Encrypt PDF with password."""
+        password = self.encrypt_password.text().strip()
+        if not password:
+            QMessageBox.warning(self, "⚠️ No Password", 
+                              "Please enter a password for encryption.")
+            return
+        
+        path = self.select_file()
+        if path:
+            out, _ = QFileDialog.getSaveFileName(self, "Save Encrypted PDF", "", "PDF Files (*.pdf)")
+            if out:
+                if not out.endswith('.pdf'): out += '.pdf'
+                progress = self.show_progress("Encrypting PDF...")
+                success = PDFEngine.encrypt_pdf(path, out, password)
+                progress.close()
+                if success:
+                    QMessageBox.information(self, "✅ Success", 
+                                          f"PDF encrypted successfully!\n\n"
+                                          f"Password: {password}\n"
+                                          f"Saved to:\n{out}")
+                    self.encrypt_password.clear()
+                else:
+                    QMessageBox.critical(self, "❌ Error", "Failed to encrypt PDF.")
+    
+    def run_decrypt(self):
+        """Decrypt password-protected PDF."""
+        password = self.decrypt_password.text().strip()
+        if not password:
+            QMessageBox.warning(self, "⚠️ No Password", 
+                              "Please enter the password to unlock the PDF.")
+            return
+        
+        path = self.select_file()
+        if path:
+            out, _ = QFileDialog.getSaveFileName(self, "Save Decrypted PDF", "", "PDF Files (*.pdf)")
+            if out:
+                if not out.endswith('.pdf'): out += '.pdf'
+                progress = self.show_progress("Decrypting PDF...")
+                success = PDFEngine.decrypt_pdf(path, out, password)
+                progress.close()
+                if success:
+                    QMessageBox.information(self, "✅ Success", 
+                                          f"PDF decrypted successfully!\n\nSaved to:\n{out}")
+                    self.decrypt_password.clear()
+                else:
+                    QMessageBox.warning(self, "❌ Decryption Failed", 
+                                      "Failed to decrypt PDF.\n\n"
+                                      "Possible reasons:\n"
+                                      "• Incorrect password\n"
+                                      "• File is not encrypted\n"
+                                      "• File is corrupted")
+    
+    def run_rotation(self):
+        """Rotate pages in PDF."""
+        path = self.select_file()
+        if not path:
+            return
+        
+        # Get rotation angle from combo box
+        angle_text = self.rotation_angle.currentText()
+        angle_map = {
+            "90° Clockwise": 90,
+            "180°": 180,
+            "270° Clockwise": 270
+        }
+        rotation = angle_map.get(angle_text, 90)
+        
+        # Determine which pages to rotate
+        pages = None  # None means all pages
+        if not self.rotate_all_pages.isChecked():
+            # Could add page selection input here, for now just rotate all
+            pages = None
+        
+        out, _ = QFileDialog.getSaveFileName(self, "Save Rotated PDF", "", "PDF Files (*.pdf)")
+        if out:
+            if not out.endswith('.pdf'): out += '.pdf'
+            progress = self.show_progress(f"Rotating pages by {rotation}°...")
+            success = PDFEngine.rotate_pages(path, out, rotation, pages)
+            progress.close()
+            if success:
+                page_count = PDFEngine.get_page_count(out)
+                QMessageBox.information(self, "✅ Success", 
+                                      f"Pages rotated successfully!\n\n"
+                                      f"Rotation: {rotation}°\n"
+                                      f"Pages affected: {page_count}\n"
+                                      f"Saved to:\n{out}")
+            else:
+                QMessageBox.critical(self, "❌ Error", "Failed to rotate pages.")
+    
+    def run_text_extraction(self):
+        """Extract text from PDF to TXT file."""
+        path = self.select_file()
+        if not path:
+            return
+        
+        out, _ = QFileDialog.getSaveFileName(self, "Save Extracted Text", "", "Text Files (*.txt)")
+        if out:
+            if not out.endswith('.txt'): out += '.txt'
+            progress = self.show_progress("Extracting text from PDF...")
+            
+            try:
+                # Extract text from all pages
+                text = PDFEngine.extract_text(path)
+                
+                # Write to file
+                with open(out, 'w', encoding='utf-8') as f:
+                    f.write(text)
+                
+                progress.close()
+                
+                # Count words and characters
+                word_count = len(text.split())
+                char_count = len(text)
+                
+                QMessageBox.information(self, "✅ Success", 
+                                      f"Text extracted successfully!\n\n"
+                                      f"Characters: {char_count:,}\n"
+                                      f"Words: {word_count:,}\n"
+                                      f"Saved to:\n{out}")
+            except Exception as e:
+                progress.close()
+                QMessageBox.critical(self, "❌ Error", 
+                                   f"Failed to extract text.\n\nError: {str(e)}")
+    
+    def show_metadata(self):
+        """Display PDF metadata in a dialog."""
+        path = self.select_file()
+        if not path:
+            return
+        
+        try:
+            pdf_info = PDFEngine.get_pdf_info(path)
+            dialog = MetadataDialog(pdf_info, self)
+            dialog.exec()
+        except Exception as e:
+            QMessageBox.critical(self, "❌ Error", 
+                               f"Failed to read PDF metadata.\n\nError: {str(e)}")
 
 class PDFMasterApp(QMainWindow):
     def __init__(self):

@@ -117,16 +117,19 @@ class PDFEngine:
             x = rect.width / 2
             y = rect.height / 2
             
-            # Add watermark text at center, rotated
-            text_rect = fitz.Rect(x - 200, y - 50, x + 200, y + 50)
-            page.insert_textbox(
-                text_rect,
-                watermark_text,
-                fontsize=48,
-                color=(0.7, 0.7, 0.7),
-                align=fitz.TEXT_ALIGN_CENTER,
-                rotate=45
-            )
+            # Use insert_text directly with a simple approach
+            # Create text at center of page
+            fontsize = 60
+            font = fitz.Font("helv")
+            text_length = font.text_length(watermark_text, fontsize=fontsize)
+            
+            # Position text at center
+            text_point = fitz.Point(x - text_length/2, y)
+            
+            # Insert the text directly on the page with transparency
+            tw = fitz.TextWriter(rect)
+            tw.append(text_point, watermark_text, font=font, fontsize=fontsize)
+            tw.write_text(page, color=(0.7, 0.7, 0.7), opacity=opacity)
         
         doc.save(output_path)
         doc.close()
