@@ -174,11 +174,11 @@ class Sidebar(QFrame):
         
         layout.addStretch()
         
-        # Settings button
-        self.btn_settings = QPushButton("⚙️  Settings")
-        self.btn_settings.setObjectName("SidebarBtn")
-        self.btn_settings.setToolTip("Application settings")
-        layout.addWidget(self.btn_settings)
+        # Help button
+        self.btn_help = QPushButton("❓ Help & Manual")
+        self.btn_help.setObjectName("SidebarBtn")
+        self.btn_help.setToolTip("View features and usage guide")
+        layout.addWidget(self.btn_help)
 
 class PDFViewer(QWidget):
     def __init__(self, parent=None):
@@ -777,6 +777,154 @@ class MetadataDialog(QDialog):
         """)
         button_box.rejected.connect(self.reject)
         layout.addWidget(button_box)
+
+class HelpDialog(QDialog):
+    """Dialog to display application help and manual."""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Help & User Manual")
+        self.resize(700, 800)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #0A0A0B;
+            }
+            QLabel {
+                color: #D1D5DB;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+            QLabel#HelpHeader {
+                color: #FFFFFF;
+                font-size: 20px;
+                font-weight: bold;
+                border-bottom: 1px solid #2A2A2F;
+                padding-bottom: 8px;
+                margin-top: 24px;
+                margin-bottom: 12px;
+            }
+            QLabel#FeatureTitle {
+                color: #60A5FA;
+                font-size: 16px;
+                font-weight: bold;
+                margin-top: 16px;
+            }
+        """)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Scroll Area
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("QScrollArea { border: none; background-color: transparent; }")
+        
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(32, 32, 32, 32)
+        content_layout.setSpacing(10)
+        
+        # Title
+        title = QLabel("📚 PDF Master - User Manual")
+        title.setStyleSheet("color: white; font-size: 28px; font-weight: bold; margin-bottom: 16px;")
+        content_layout.addWidget(title)
+        
+        intro = QLabel(
+            "Welcome to PDF Master! This tool provides a comprehensive suite of features to manage, "
+            "convert, and secure your PDF documents. Below is a guide to all available features."
+        )
+        intro.setWordWrap(True)
+        content_layout.addWidget(intro)
+        
+        # Feature Sections
+        sections = [
+            ("📖 Document Viewer", 
+             "• **View**: Open and read PDF documents with smooth scrolling and zooming.\n"
+             "• **Navigate**: Use the toolbar or keyboard arrows to change pages.\n"
+             "• **Annotate**: Click 'Annotate' and select a location to add text notes directly onto the PDF.\n"
+             "• **Drag & Drop**: Simply drag a PDF file into the application to open it."),
+            
+            ("🔀 Merge PDFs",
+             "• **Combine Files**: Select multiple PDF files and merge them into a single document.\n"
+             "• **Reorder**: Use the list to verify the order of files before merging.\n"
+             "• **Clear**: Easily remove selected files to start over."),
+            
+            ("✂️ Split PDF",
+             "• **Split into Pages**: Instantly break a PDF file into individual files for each page.\n"
+             "• **Page Organization**: Extract specific pages or ranges using the Tools section."),
+             
+            ("🛠️ PDF Tools - Conversion & Optimization",
+             "• **Compress**: Reduce file size for easier sharing while maintaining quality.\n"
+             "• **PDF to Images**: Convert all pages into high-quality image files (PNG/JPG).\n"
+             "• **Office Conversion**: Convert PDFs to Word, Excel, or PowerPoint, and vice-versa."),
+             
+            ("💧 Watermarking & Security",
+             "• **Watermark**: Add custom text watermarks to all pages to protect your work.\n"
+             "• **Encrypt**: Secure your PDF with a password to prevent unauthorized access.\n"
+             "• **Decrypt**: Remove password protection from secured PDFs (password required)."),
+             
+            ("📝 Text & Metadata",
+             "• **Extract Text**: Pull all text content from a PDF into a plain text (.txt) file.\n"
+             "• **Metadata**: View detailed document properties like Author, Creator, and Created Date.\n"
+             "• **Rotation**: Rotate pages by 90°, 180°, or 270° to fix orientation issues.")
+        ]
+        
+        for header, text in sections:
+            h_label = QLabel(header)
+            h_label.setObjectName("HelpHeader")
+            content_layout.addWidget(h_label)
+            
+            t_label = QLabel(text)
+            t_label.setWordWrap(True)
+            t_label.setTextFormat(Qt.MarkdownText)
+            content_layout.addWidget(t_label)
+        
+        # Shortcuts
+        shortcuts_header = QLabel("⌨️ Keyboard Shortcuts")
+        shortcuts_header.setObjectName("HelpHeader")
+        content_layout.addWidget(shortcuts_header)
+        
+        shortcuts_text = QLabel(
+            "• **Ctrl+1**: Document Viewer\n"
+            "• **Ctrl+2**: Merge Tab\n"
+            "• **Ctrl+3**: Split Tab\n"
+            "• **Ctrl+4**: Tools Tab\n"
+            "• **Ctrl+O**: Open PDF\n"
+            "• **F11**: Toggle Fullscreen"
+        )
+        shortcuts_text.setWordWrap(True)
+        shortcuts_text.setTextFormat(Qt.MarkdownText)
+        content_layout.addWidget(shortcuts_text)
+        
+        content_layout.addStretch()
+        scroll.setWidget(content)
+        layout.addWidget(scroll)
+        
+        # Close button bar
+        btn_bar = QFrame()
+        btn_bar.setStyleSheet("background-color: #161618; border-top: 1px solid #2A2A2F;")
+        btn_layout = QHBoxLayout(btn_bar)
+        btn_layout.setContentsMargins(16, 16, 16, 16)
+        
+        btn_close = QPushButton("Close Manual")
+        btn_close.setFixedSize(120, 40)
+        btn_close.setStyleSheet("""
+            QPushButton {
+                background-color: #3B82F6;
+                color: white;
+                border-radius: 6px;
+                font-weight: bold;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #2563EB;
+            }
+        """)
+        btn_close.clicked.connect(self.accept)
+        
+        btn_layout.addStretch()
+        btn_layout.addWidget(btn_close)
+        layout.addWidget(btn_bar)
 
 class ToolsWidget(QWidget):
     def __init__(self, parent=None):
@@ -1776,6 +1924,7 @@ class PDFMasterApp(QMainWindow):
         self.sidebar.btn_merge.clicked.connect(lambda: self.switch_page(1))
         self.sidebar.btn_split.clicked.connect(lambda: self.switch_page(2))
         self.sidebar.btn_tools.clicked.connect(lambda: self.switch_page(3))
+        self.sidebar.btn_help.clicked.connect(self.show_help)
         
         # Keyboard shortcuts
         self.setup_shortcuts()
@@ -1957,6 +2106,11 @@ class PDFMasterApp(QMainWindow):
                 self.pdf_viewer.show()
                 self.pdf_viewer.load_pdf(file_path)
                 self.status_bar.showMessage(f"Opened: {os.path.basename(file_path)}")
+
+    def show_help(self):
+        """Show the help dialog."""
+        dialog = HelpDialog(self)
+        dialog.exec()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
