@@ -1,15 +1,92 @@
 # PDF Master
 
-A professional PDF management tool built with Python and PySide6.
+A professional PDF management tool built with Python and PySide6, featuring a modern dark-themed UI with comprehensive PDF manipulation capabilities.
 
 ## Features
 
-- **PDF Viewer**: View PDF files with zoom and navigation controls.
-- **Merge PDFs**: Combine multiple PDF files into a single document.
-- **Split PDFs**: Split a PDF document into individual pages.
-- **Tools**: 
-  - **Compress PDF**: Reduce file size without losing quality.
-  - **PDF to Image**: Convert pages into high-quality images.
+### 📖 Document Viewer
+- View PDF files with smooth navigation
+- Zoom controls (in, out, fit to window)
+- Page navigation (previous/next)
+- Annotation support - add text annotations directly to PDFs
+- Drag and drop support for quick file loading
+
+### 🔀 Merge PDFs
+- Combine multiple PDF files into a single document
+- Drag and drop interface for easy file management
+- Reorder files before merging
+- Recent files tracking
+
+### ✂️ Split PDFs
+- Split PDF documents into individual pages
+- Extract specific page ranges
+- Drag and drop support
+- Batch processing capabilities
+
+### 🛠️ PDF Tools & Utilities
+
+#### 🗜️ Compression
+- Reduce file size while maintaining quality
+- Optimized compression algorithms
+
+#### 🖼️ Format Conversion
+- **PDF to Images**: Convert pages to high-quality JPG/PNG images
+- **Office Conversion**: 
+  - PDF ↔ Word (.docx)
+  - PDF ↔ Excel (.xlsx)
+  - PDF ↔ PowerPoint (.pptx)
+
+#### 💧 Watermarking
+- Add custom text watermarks to all pages
+- Configurable watermark text
+- Professional watermark placement
+
+#### 🔒 Security & Encryption
+- **Encrypt PDFs**: Password-protect your documents
+- **Decrypt PDFs**: Unlock password-protected files
+- Secure encryption standards
+
+#### 🔄 Page Rotation
+- Rotate pages by 90°, 180°, or 270°
+- Rotate all pages or specific pages
+- Preserve document structure
+
+#### 📝 Text Extraction
+- Extract all text content from PDFs
+- Save extracted text to .txt files
+- Maintain text formatting where possible
+
+#### ℹ️ Metadata Viewer
+- View comprehensive PDF properties
+- Display document information:
+  - Title, Author, Subject
+  - Creator, Producer
+  - Creation and modification dates
+  - Page count
+  - Encryption status
+
+#### 📑 Page Organization
+- Extract specific pages (e.g., 1, 3-5, 7)
+- Remove unwanted pages
+- Create custom page selections
+
+## User Interface
+
+- **Modern Dark Theme**: Sleek, professional dark-themed interface with gradient accents
+- **Drag \u0026 Drop Support**: Easily add files by dragging them into the application
+- **Responsive Design**: Scrollable interfaces for comfortable viewing
+- **Visual Feedback**: Smooth animations and hover effects
+- **Status Bar**: Real-time progress updates and notifications
+- **Tooltips**: Helpful hints for all major features
+
+## Keyboard Shortcuts
+
+- **Ctrl+1**: Switch to Document Viewer
+- **Ctrl+2**: Switch to Merge PDFs
+- **Ctrl+3**: Switch to Split PDF
+- **Ctrl+4**: Switch to PDF Tools
+- **Ctrl+O**: Add files (in Merge view)
+- **Ctrl+M**: Merge PDFs (in Merge view)
 
 ## Installation
 
